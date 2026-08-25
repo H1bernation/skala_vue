@@ -47,5 +47,9 @@ const isButtonDisabled = ref(true)
     <p>현재 버튼 사용 불가능 상태 : {{ isButtonDisabled }}</p>
     <button :disabled="isButtonDisabled">클릭 가능한 버튼</button>
     <button @click="isButtonDisabled = !isButtonDisabled">잠금 상태 변경</button>
+
+    <hr />
+
+    <button @click="showAlert">알림 띄우기</button>
   </div>
 </template>
