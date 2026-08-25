@@ -1,12 +1,81 @@
 <script setup>
-import WeatherMockup from './components/hands_on/WeatherMockup.vue'
+import { ref } from 'vue'
+import WeatherComposition from './components/hands_on/WeatherComposition.vue'
+import V_DirectiveChallenge from './components/code_challenge/V_DirectiveChallenge.vue'
+import EventHandlingChallenge from './components/code_challenge/EventHandlingChallenge.vue'
+import FormHandlingChallenge from './components/code_challenge/FormHandlingChallenge.vue'
+import ReactiveStateChallenge from './components/code_challenge/ReactiveStateChallenge.vue'
+import ComputedWatchersChallenge from './components/code_challenge/ComputedWatchersChallenge.vue'
+const currentPage = ref('practice')
 </script>
 
 <template>
-  <WeatherMockup />
+  <div class="tab-nav">
+    <button
+      class="tab-button"
+      :class="{ 'tab-button--active': currentPage === 'practice' }"
+      @click="currentPage = 'practice'"
+    >
+      Practice
+    </button>
+    <button
+      class="tab-button"
+      :class="{ 'tab-button--active': currentPage === 'challenge' }"
+      @click="currentPage = 'challenge'"
+    >
+      Code Challenge
+    </button>
+  </div>
+  <section v-if="currentPage === 'practice'">
+    <!-- 실습 컴포넌트들 -->
+    <WeatherComposition />
+  </section>
+
+  <section v-else>
+    <!-- 코드챌린지 컴포넌트들 -->
+    <V_DirectiveChallenge />
+    <hr />
+    <EventHandlingChallenge />
+    <hr />
+    <FormHandlingChallenge />
+    <hr />
+    <ReactiveStateChallenge />
+    <hr />
+    <ComputedWatchersChallenge />
+  </section>
 </template>
 
 <style scoped>
+.tab-nav {
+  display: flex;
+  gap: 8px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 20px 0;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 10px 0;
+  border: 1px solid #d5d8dd;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #6b7078;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab-button:hover {
+  background: #f2f4f7;
+}
+
+.tab-button--active {
+  background: #2b2f36;
+  border-color: #2b2f36;
+  color: #ffffff;
+}
+
 header {
   line-height: 1.5;
   max-height: 100vh;
