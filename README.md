@@ -15,12 +15,13 @@ npm run dev
 
 ## 주요 추가 기능
 
-- 도시별 날씨 카드 목록, 한글 도시명 검색/필터링
+교안에서 요구한 필수 구현(카드 목록, 검색, 상세 페이지, 라우팅, 단위 전환, UI Library 적용 등)은 각 과제별 구현 내용에 정리했고, 여기에는 과제 요구사항에 없던 것 중 직접 추가한 기능만 적는다.
+
 - 기준 온도를 직접 입력해 "더운 도시" 개수 확인 (섭씨/화씨 단위 전환 반영)
-- 카드 클릭 시 선택 도시 표시, 상세보기 클릭 시 `/weather/:cityId` 상세 페이지로 이동
-- 서비스 소개 페이지(`/about`), 정의되지 않은 경로는 404 페이지 처리
-- 섭씨/화씨 단위 전환 (Pinia `configStore`)
 - 도시 즐겨찾기 등록 및 "즐겨찾기만 보기" 필터 (Pinia `favoriteStore`)
+- 대기질(PM10/PM2.5) 정보 및 Open-Meteo 기반 야외활동 지수 표시
+- 대한민국 SVG 지도로 지역별 기온/대기질 시각화 및 지역 선택 패널
+- API 상태(Loading/Error/Empty/404)를 한 화면에서 확인하는 "UI 상태" 페이지(`/states`)
 
 ## 단계별 구현 과정
 
@@ -491,5 +492,69 @@ const response = await axios.get('https://api.open-meteo.com/v1/forecast', {
 요구사항 3(기타 외부 API)을 채우려고 처음엔 AirKorea(에어코리아) 대기오염 API를 붙였다. 서비스키 발급 문제를 해결하고 curl로 직접 호출해보면 정상 응답(200)이 오는데, 정작 브라우저에서 axios로 호출하면 전부 403이 났다. 처음엔 CORS 문제라고 생각했는데, 실제로는 CORS 프리플라이트 실패가 아니라 서버가 진짜 403을 응답하고 있었다 — AirKorea API는 서버 대 서버 호출을 전제로 만들어져 있어서, 브라우저가 자동으로 붙이는 Origin/Referer 헤더를 보고 게이트웨이 단에서 차단하고 있었던 것이다.(Claude로 확인)
 
 Vite 개발 서버의 proxy 기능을 쓰면 dev 모드에서는 우회할 수 있다는 것까지 확인했지만, 이 프로젝트의 최종 제출 방식이 Vercel을 통한 정적 배포라 별도 백엔드 없이는 이 우회가 배포 환경에서 그대로 동작하지 않는다. 그래서 API Key 없이 호출 가능하고 CORS를 전면 허용하는 Open-Meteo API를 사용했다.
+
+</details>
+
+<details>
+<summary><h3>과제 7 - Weather UI Library</h3></summary>
+
+### 목표
+
+외부 UI Library를 하나 선정해서 지금까지 만든 Weather 앱에 자유롭게 적용하는 게 목표였다. 데이터 쪽 요구사항(OpenWeatherMap 연동, 추가 API 확장)은 과제 6에서 이미 충족한 상태라 새로 건드리지 않고, Element Plus를 선정해서 기존 화면의 UI를 다시 정리하는 데 집중했다.
+
+### 구현 내용
+
+**1. Element Plus 등록**
+
+`element-plus`는 프로젝트 초기 스캐폴딩(Code Challenge 실습용) 단계부터 `package.json`에 들어 있었지만, `main.js`에서 `app.use(ElementPlus)`로 전역 등록을 한 적이 없어서 Weather 화면에서는 쓸 수 없는 상태였다. `main.js`에 등록해서 Weather 컴포넌트에서도 `el-*` 컴포넌트를 쓸 수 있게 했다.
+
+```js
+import 'element-plus/dist/index.css'
+import ElementPlus from 'element-plus'
+// ...
+app.use(ElementPlus)
+```
+
+**2. 화면별 Element Plus 적용**
+
+기존 컴포넌트의 상태/이벤트 흐름(Props/Emits, Pinia 연동)은 그대로 두고, 마크업만 Element Plus 컴포넌트로 교체했다.
+
+- `UnitToggler.vue`: 토글 버튼 → `el-switch`
+- `HotThresholdControl.vue`: `input[type=number]` → `el-input-number`
+- `SearchBar.vue`: `input` → `el-input`(clearable, prefix 아이콘)
+- `WeatherHomeView.vue`: 로딩/에러/빈 상태 → `el-alert`, `el-empty`, 전체/즐겨찾기 필터 → `el-segmented`
+- `WeatherCard.vue`, `WeatherDetailView.vue`: 날씨 상태 표시 → `el-tag`
+- `WeatherAboutView.vue`: 기술 스택 목록 → `el-tag`
+- `NotFoundView.vue`: 404 화면 전체 → `el-result`
+
+**3. Element Plus로 맞지 않는 부분은 자체 구현**
+
+목업 디자인과 비교했을 때 Element Plus 기본 스타일이 안 맞는 부분은 그대로 맞추려 하지 않고 직접 만들었다. 대한민국 지도(`KoreaMap.vue`)는 별도 지도/차트 라이브러리 없이 SVG `<path>`를 직접 그려서 지역 클릭·hover·색상 단계를 구현했고, `WeatherCard.vue`의 "상세보기" 링크도 `el-button`의 박스 형태 대신 텍스트 링크 스타일로 직접 만들었다.
+
+**4. UI 상태 페이지 (`/states`) 추가**
+
+`UiStatesView.vue`를 새로 만들어서 Axios 연동 이후 실제로 마주치는 Success/Loading/Error/Empty/404 상태를 한 화면에서 확인할 수 있게 했다. 디자인 샘플이 아니라 실제 `WeatherCard`, `el-skeleton`, `v-loading`, `el-alert`, `el-empty`, 그리고 진짜 존재하지 않는 경로로 이동해서 catch-all Route(`NotFoundView`)를 그대로 재사용한다. `App.vue` Navigation Bar에 "UI 상태" 메뉴를 추가해서 연결했다.
+
+### 주요 변경
+
+- `src/main.js` — Element Plus 전역 등록
+- `src/components/hands_on/UnitToggler.vue`, `HotThresholdControl.vue`, `SearchBar.vue`, `WeatherCard.vue` 수정
+- `src/views/WeatherHomeView.vue`, `WeatherDetailView.vue`, `WeatherAboutView.vue`, `NotFoundView.vue` 수정
+- `src/components/hands_on/KoreaMap.vue`, `src/views/UiStatesView.vue` 새로 작성
+- `src/App.vue` — "UI 상태" 메뉴 추가
+
+### Troubleshooting
+
+**검색 input이 카드 전체 폭까지 늘어나던 문제**
+
+`el-input`에 `max-width`만 줬는데도 카드 폭(약 1000px)까지 그대로 늘어났다. Element Plus는 `el-input`의 폭을 `--el-input-width`라는 자체 CSS 변수(기본값 100%)로 결정하고 있어서, `max-width`를 덮어써도 그 변수 자체가 이기는 상황이었다. `max-width` 대신 `--el-input-width` 변수를 직접 420px로 지정해서 해결했다.
+
+**대기질 범례 색상이 안 보이던 문제**
+
+지도 범례의 색상 스와치(`<span class="legend-swatch">`)에 지도 `<path>`와 같은 클래스를 재사용했는데, 정작 스와치 색이 하나도 안 보였다. `fill`은 SVG 도형 요소에만 적용되는 속성이라 일반 HTML 요소인 `<span>`에는 효과가 없었던 게 원인이다. 색상 값을 CSS 변수로 한 번만 정의해두고, `<path>`에는 `fill`, `<span>`에는 `background-color`로 각각 적용하도록 나눴다.
+
+**지도+범례 크기가 기온/대기질 모드를 전환할 때마다 바뀌던 문제**
+
+지도를 감싼 `.korea-map-wrap`의 폭을 `width: min(480px, 100%)`로 줬는데도, 기온 모드와 대기질 모드를 오갈 때마다 지도 크기가 미세하게 달라졌다. 이 요소가 CSS Grid의 `auto` 트랙 안에 있었던 게 원인이었다 — `auto` 트랙 폭은 안쪽 콘텐츠의 크기를 보고 정해지는데, 그 계산 과정에서 퍼센트 값(`100%`)이 안정적으로 해석되지 않고, 결국 옆에 있는 범례 글자 길이(기온 모드의 "선선해요 (25℃ 미만)" 같은 긴 문구 vs 대기질 모드의 "좋음/보통/나쁨" 같은 짧은 문구)에 따라 트랙 폭 자체가 흔들렸다. `.korea-map-wrap`의 `width`가 아니라, 그걸 감싸는 Grid 트랙(`grid-template-columns`)을 `480px 1fr`처럼 고정 픽셀 값으로 못 박아서 해결했다.
 
 </details>

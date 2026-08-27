@@ -1,5 +1,8 @@
 <script setup>
 // "더운 도시 기준" 입력 영역. 기준 온도를 입력받고, 그 기준 이상인 도시 수를 보여준다.
+//
+// 변경 이력
+// - UI 개선: 숫자 input을 el-input-number로 교체(단방향 바인딩 구조는 그대로 유지)
 const props = defineProps({
   // hotThreshold: 부모가 관리하는 현재 기준 온도(선택된 단위 기준 숫자)
   hotThreshold: {
@@ -33,11 +36,12 @@ const sendToParent = (newValue) => {
     <label class="threshold-label">
       더운 도시 기준
       <span class="threshold-input-wrap">
-        <input
-          type="number"
+        <el-input-number
           class="threshold-input"
-          :value="hotThreshold"
-          @input="sendToParent(Number($event.target.value))"
+          :model-value="hotThreshold"
+          :controls="false"
+          size="small"
+          @input="sendToParent"
         />
         <span class="threshold-unit">{{ unitSymbol }}</span>
       </span>
@@ -70,24 +74,10 @@ const sendToParent = (newValue) => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #ffffff;
-  border: 1px solid #d5d8dd;
-  border-radius: 8px;
-  padding: 4px 10px;
 }
 
 .threshold-input {
-  width: 52px;
-  border: none;
-  outline: none;
-  font-size: 14px;
-  text-align: center;
-  color: #2b2f36;
-  background: transparent;
-}
-
-.threshold-input-wrap:focus-within {
-  border-color: #7aa5ff;
+  width: 80px;
 }
 
 .threshold-unit {

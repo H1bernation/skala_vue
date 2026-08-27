@@ -20,6 +20,11 @@ const router = createRouter({
       component: () => import('../views/WeatherDetailView.vue'),
     },
     {
+      path: '/states',
+      name: 'ui-states',
+      component: () => import('../views/UiStatesView.vue'),
+    },
+    {
       // 정의되지 않은 모든 경로를 처리하는 Catch-all Route
       path: '/:pathMatch(.*)*',
       name: 'not-found',

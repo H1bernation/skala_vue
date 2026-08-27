@@ -14,6 +14,7 @@ import { useActivityStore } from '../stores/activityStore'
 // - 과제 6: Mock 데이터 대신 weatherStore(OpenWeatherMap)에서 도시를 조회하도록 변경
 // - 과제 6: OpenWeatherMap Air Pollution API로 미세먼지/초미세먼지/대기질 상태 표시 추가
 // - 과제 6: Open-Meteo 기반 야외활동 지수 표시 추가
+// - UI 개선: 풍속/PM 측정 시각 표시 추가, Element Plus(el-tag) 적용, 카드 스타일 정돈
 const route = useRoute()
 const configStore = useConfigStore()
 const favoriteStore = useFavoriteStore()
@@ -49,6 +50,12 @@ const displayTemp = computed(() => {
   }
   return city.value.temp
 })
+
+// pmMeasuredAt은 초 단위 Unix Timestamp로 저장돼 있어 표시 시점에 시각 문자열로 변환한다.
+const pmMeasuredAtText = computed(() => {
+  if (!city.value?.pmMeasuredAt) return null
+  return new Date(city.value.pmMeasuredAt * 1000).toLocaleTimeString('ko-KR')
+})
 </script>
 
 <template>
@@ -67,10 +74,24 @@ const displayTemp = computed(() => {
       <span class="weather-emoji">{{ city.emoji }}</span>
       <h1 class="city-name">{{ city.name }}</h1>
       <p class="city-temp">{{ displayTemp }}{{ configStore.unitSymbol }}</p>
-      <p class="city-status">{{ city.status }}</p>
-      <p class="city-humidity">습도 {{ city.humidity }}%</p>
-      <p class="city-air">미세먼지 {{ city.pm10 }}μg/m³ · 초미세먼지 {{ city.pm25 }}μg/m³</p>
-      <p class="city-air-status">대기질 {{ city.airQuality }}</p>
+      <el-tag size="small">{{ city.status }}</el-tag>
+
+      <dl class="city-stats">
+        <div><dt>습도</dt><dd>{{ city.humidity }}%</dd></div>
+        <div><dt>풍속</dt><dd>{{ city.windSpeed }} m/s</dd></div>
+      </dl>
+
+      <div class="air-quality-section">
+        <div class="air-quality-header">
+          <span>대기질</span>
+          <el-tag size="small" type="info">{{ city.airQuality }}</el-tag>
+        </div>
+        <dl class="city-stats">
+          <div><dt>PM10</dt><dd>{{ city.pm10 }}㎍/㎥</dd></div>
+          <div><dt>PM2.5</dt><dd>{{ city.pm25 }}㎍/㎥</dd></div>
+        </dl>
+        <p v-if="pmMeasuredAtText" class="pm-measured-at">측정 시각 {{ pmMeasuredAtText }}</p>
+      </div>
 
       <!-- 야외활동 지수 (Open-Meteo 기반) -->
       <div v-if="cityActivity" class="activity-box">
@@ -151,29 +172,50 @@ const displayTemp = computed(() => {
   margin: 0 0 4px;
 }
 
-.city-status {
-  font-size: 14px;
-  color: #6b7078;
-  margin: 0 0 4px;
+.city-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  margin: 16px 0 0;
 }
 
-.city-humidity {
-  font-size: 14px;
-  color: #6b7078;
-  margin: 0 0 4px;
+.city-stats div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  border-bottom: 1px solid #e9eef6;
+  padding-bottom: 6px;
 }
 
-.city-air {
-  font-size: 14px;
-  color: #6b7078;
-  margin: 0 0 4px;
+.city-stats dt {
+  color: #8a97a8;
 }
 
-.city-air-status {
+.city-stats dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.air-quality-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eef0f2;
+  text-align: left;
+}
+
+.air-quality-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 14px;
   font-weight: 600;
-  color: #2b2f36;
-  margin: 0;
+  margin-bottom: 8px;
+}
+
+.pm-measured-at {
+  font-size: 12px;
+  color: #8a97a8;
+  margin: 8px 0 0;
 }
 
 .not-found-message {

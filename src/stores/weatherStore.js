@@ -57,6 +57,8 @@ export const useWeatherStore = defineStore('weather', {
     weatherList: [],
     isLoading: false,
     error: null,
+    // 화면에 "몇 시 기준"을 보여주기 위한, 실제 fetch 성공 시각(하드코딩 아님).
+    lastUpdatedAt: null,
   }),
 
   actions: {
@@ -105,11 +107,15 @@ export const useWeatherStore = defineStore('weather', {
             status: data.weather[0].description,
             emoji: WEATHER_EMOJI[data.weather[0].main] || '🌡️',
             humidity: data.main.humidity,
+            windSpeed: Math.round(data.wind.speed * 10) / 10,
             pm10: Math.round(air.components.pm10),
             pm25: Math.round(air.components.pm2_5),
             airQuality: getAirQualityStatus(air.main.aqi),
+            // 대기질 측정 시각(초 단위 Unix Timestamp)을 그대로 두고, 표시할 때 Date로 변환한다.
+            pmMeasuredAt: air.dt,
           }
         })
+        this.lastUpdatedAt = new Date()
       } catch (err) {
         console.error('날씨 데이터를 가져오지 못했습니다:', err)
         this.error = '날씨 데이터를 불러오지 못했습니다. API 키를 확인해주세요.'
