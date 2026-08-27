@@ -8,6 +8,12 @@ import HotThresholdControl from '../components/hands_on/HotThresholdControl.vue'
 import { useFavoriteStore } from '../stores/favoriteStore'
 import { useConfigStore } from '../stores/configStore'
 
+// '/' 경로의 날씨 대시보드. 과제 3까지의 WeatherParents 역할을 이어받아
+// 검색, 기준 온도 필터, 카드 목록, 상세보기 이동을 담당한다.
+//
+// 변경 이력
+// - 과제 4: WeatherParents의 상태/로직을 이전, alert 대신 router.push로 상세 페이지 이동
+// - 과제 5: 단위 설정(configStore)과 즐겨찾기(favoriteStore) 연동, 즐겨찾기 필터 추가
 const router = useRouter()
 const favoriteStore = useFavoriteStore()
 const configStore = useConfigStore()

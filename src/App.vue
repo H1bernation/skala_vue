@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import axios from 'axios'
 import V_DirectiveChallenge from './components/code_challenge/V_DirectiveChallenge.vue'
 import EventHandlingChallenge from './components/code_challenge/EventHandlingChallenge.vue'
 import FormHandlingChallenge from './components/code_challenge/FormHandlingChallenge.vue'
@@ -7,7 +8,15 @@ import ReactiveStateChallenge from './components/code_challenge/ReactiveStateCha
 import ComputedWatchersChallenge from './components/code_challenge/ComputedWatchersChallenge.vue'
 import ComponentLifecycle from './components/code_challenge/ComponentLifecycle.vue'
 import UnitToggler from './components/hands_on/UnitToggler.vue'
+import AxiosWeather from './components/practices/AxiosWeather.vue'
 
+// 최상위 컴포넌트. 탭으로 Practice(Weather 대시보드 + Router)와 Code Challenge 화면을 전환한다.
+//
+// 변경 이력
+// - 과제 1: WeatherMockup 렌더링 연결
+// - 과제 2: WeatherComposition으로 렌더링 대상 교체
+// - 과제 4: Practice 탭 내부를 RouterLink 내비게이션 + RouterView로 교체
+// - 과제 5: Navigation Bar 옆에 UnitToggler 배치
 const currentPage = ref('practice')
 const showLifecycle = ref(true)
 </script>
@@ -53,7 +62,7 @@ const showLifecycle = ref(true)
     <hr />
     <ComputedWatchersChallenge />
     <hr />
-
+    <AxiosWeather />
     <section class="lifecycle-card">
       <h2>Lifecycle Hook</h2>
 

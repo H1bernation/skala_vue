@@ -5,6 +5,9 @@ import SearchBar from './SearchBar.vue'
 import WeatherCard from './WeatherCard.vue'
 import HotThresholdControl from './HotThresholdControl.vue'
 
+// 과제 3에서 날씨 대시보드 로직/화면을 컴포넌트 단위로 분리한 버전이다.
+// 과제 4에서 이 역할이 views/WeatherHomeView.vue로 옮겨가면서 더 이상 사용되지 않는다
+// (App.vue에서 더 이상 import하지 않음). 이전 구현 참고용으로 파일만 남겨뒀다.
 const searchQuery = ref('')
 const selectedCityInfo = ref('')
 const hotThreshold = ref(30)

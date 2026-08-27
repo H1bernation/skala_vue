@@ -1,6 +1,8 @@
 <script setup>
 import { useConfigStore } from '../../stores/configStore'
 
+// 섭씨/화씨 단위를 전환하는 버튼. Navigation Bar 옆에 배치되어
+// configStore의 unitSymbol을 표시하고 클릭 시 toggleUnit을 호출한다.
 const configStore = useConfigStore()
 </script>
 

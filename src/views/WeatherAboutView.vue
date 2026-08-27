@@ -1,4 +1,6 @@
-<script setup></script>
+<script setup>
+// '/about' 경로의 서비스 소개 화면. 정적인 소개 문구와 대시보드로 돌아가는 링크만 담당한다.
+</script>
 
 <template>
   <main class="about-page">

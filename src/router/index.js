@@ -14,6 +14,7 @@ const router = createRouter({
       component: () => import('../views/WeatherAboutView.vue'),
     },
     {
+      // Dynamic Route: cityId를 params로 받아 WeatherDetailView에서 해당 도시를 조회한다.
       path: '/weather/:cityId',
       name: 'weather-detail',
       component: () => import('../views/WeatherDetailView.vue'),

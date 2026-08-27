@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed, watch, watchEffect } from 'vue'
 
+// 과제 2에서 Composition API(ref/computed/watch/watchEffect)로 반응형 상태를 관리하도록 바꾼 버전이다.
+// 과제 3에서 이 역할이 WeatherParents.vue와 하위 컴포넌트들로 옮겨가면서 더 이상 사용되지 않는다.
 const searchQuery = ref('')
 const selectedCityInfo = ref('')
 const hotThreshold = ref(30)

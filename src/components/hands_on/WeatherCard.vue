@@ -3,14 +3,27 @@ import { computed } from 'vue'
 import { useConfigStore } from '../../stores/configStore'
 import { useFavoriteStore } from '../../stores/favoriteStore'
 
+// 개별 도시의 날씨 정보를 카드 형태로 표시하고,
+// 카드 선택, 상세보기, 즐겨찾기 이벤트를 처리한다.
+//
+// 변경 이력
+// - 과제 3: WeatherParents에 있던 카드 UI를 별도 컴포넌트로 분리
+// - 과제 4: 상세보기 이동에 필요한 값을 humidity에서 도시 id로 변경
+// - 과제 5: 전역 단위 설정을 연동해 섭씨/화씨 표시 추가, 즐겨찾기 버튼 추가
 const props = defineProps({
+  // weather: 도시명, 온도, 습도 등 현재 날씨 정보를 담는 객체
   weather: {
     type: Object,
     required: true,
   },
 })
 
-const emit = defineEmits(['select-card', 'click-detail'])
+const emit = defineEmits([
+  // select-card: 카드 선택 시 선택한 도시 이름을 부모에 전달
+  'select-card',
+  // click-detail: 상세보기 요청 시 도시 id를 부모에 전달
+  'click-detail',
+])
 
 const configStore = useConfigStore()
 const favoriteStore = useFavoriteStore()

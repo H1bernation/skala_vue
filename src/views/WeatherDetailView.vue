@@ -4,6 +4,11 @@ import { useRoute } from 'vue-router'
 import { useConfigStore } from '../stores/configStore'
 import { useFavoriteStore } from '../stores/favoriteStore'
 
+// '/weather/:cityId' 경로의 상세 날씨 화면. 동적 세그먼트로 받은 cityId로 도시를 찾아 보여준다.
+//
+// 변경 이력
+// - 과제 4: 최초 작성, cityId 기준으로 도시를 찾아 표시
+// - 과제 5: 단위 설정과 즐겨찾기 상태를 Home과 공유하도록 연동
 const route = useRoute()
 const configStore = useConfigStore()
 const favoriteStore = useFavoriteStore()

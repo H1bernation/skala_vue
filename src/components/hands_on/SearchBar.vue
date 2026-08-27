@@ -1,12 +1,18 @@
 <script setup>
+// 도시 검색 input과 "입력한 도시" 안내 문구를 담당한다.
+// 검색어 상태는 부모가 갖고 있고, 이 컴포넌트는 값을 받아 보여주고 입력 이벤트만 올려보낸다.
 const props = defineProps({
+  // query: 부모가 관리하는 현재 검색어
   query: {
     type: String,
     required: true,
   },
 })
 
-const emit = defineEmits(['update-query'])
+const emit = defineEmits([
+  // update-query: 입력값이 바뀔 때 새 검색어를 부모에 전달
+  'update-query',
+])
 const sendToParent = (newValue) => {
   console.log('[SearchBar] 검색어 변경 이벤트를 보냈습니다:', newValue)
   emit('update-query', newValue)

@@ -1,20 +1,27 @@
 <script setup>
+// "더운 도시 기준" 입력 영역. 기준 온도를 입력받고, 그 기준 이상인 도시 수를 보여준다.
 const props = defineProps({
+  // hotThreshold: 부모가 관리하는 현재 기준 온도(선택된 단위 기준 숫자)
   hotThreshold: {
     type: Number,
     required: true,
   },
+  // hotCityCount: 기준 온도 이상인 도시 개수
   hotCityCount: {
     type: Number,
     required: true,
   },
+  // unitSymbol: 현재 단위 기호(°C/°F). configStore.unit에 따라 부모가 내려준다.
   unitSymbol: {
     type: String,
     default: '°C',
   },
 })
 
-const emit = defineEmits(['update-threshold'])
+const emit = defineEmits([
+  // update-threshold: 기준 온도 입력값이 바뀔 때 새 값을 부모에 전달
+  'update-threshold',
+])
 const sendToParent = (newValue) => {
   console.log('[HotThresholdControl] 온도를 변경했습니다.:', newValue)
   emit('update-threshold', newValue)

@@ -1,4 +1,6 @@
-<script setup></script>
+<script setup>
+// 정의되지 않은 모든 경로(catch-all)에서 보여주는 404 화면.
+</script>
 
 <template>
   <main class="not-found-page">

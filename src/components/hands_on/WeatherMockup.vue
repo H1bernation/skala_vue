@@ -1,5 +1,8 @@
 <script setup>
 import { ref } from 'vue'
+
+// 과제 1에서 만든 최초 버전의 날씨 대시보드. 정적 배열을 v-for/v-if로 화면에 출력하는 데 집중했다.
+// 과제 2에서 이 역할이 WeatherComposition.vue로 옮겨가면서 더 이상 사용되지 않는다.
 const weatherList = ref([
   {
     id: 'city_01',
