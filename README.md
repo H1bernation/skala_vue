@@ -372,4 +372,22 @@ const filteredWeatherList = computed(() => {
 
 이를 해결하기 위해 5번 항목의 "즐겨찾기만 보기" 필터를 추가해, `filteredWeatherList`가 `favoriteStore.isFavorite(weather.id)`를 실제로 참조하도록 만들었습니다. Store에 상태를 저장하는 것과 그 상태를 화면 로직에서 실제로 사용하는 것은 별개의 작업이며, 후자가 빠지면 기능이 눈에 보이는 토글일 뿐 아무 역할도 하지 않는다는 점을 확인했습니다.
 
+#### 2. "더운 도시 기준"이 화씨 모드에서도 섭씨 기준으로만 동작하는 문제
+
+![Weather Store 화씨 모드에서 더운 도시 기준이 섭씨로만 동작하는 화면](docs/images/과제5_버그사항.png)
+
+단위를 화씨로 바꾸면 카드의 온도는 `°F`로 잘 바뀌는데, "더운 도시 기준" 입력 영역은 여전히 `°C`로 표시되고 있었습니다. 원인은 `HotThresholdControl.vue`의 단위 표기가 `<span class="threshold-unit">°C</span>`로 하드코딩돼 있었고, `WeatherHomeView.vue`의 `hotCityCount`도 사용자가 입력한 `hotThreshold` 숫자를 `configStore.unit`과 무관하게 항상 섭씨인 `weather.temp`와 그대로 비교하고 있었기 때문입니다. 위 스크린샷처럼 화씨 모드에서 "32"를 입력해도 실제로는 섭씨 32도 기준으로 판정되어, 화면에 보이는 단위와 실제 계산 기준이 어긋난 상태였습니다.
+
+`HotThresholdControl.vue`에 `unitSymbol` prop을 추가해 하드코딩된 `°C`를 `{{ unitSymbol }}`로 바꾸고, `WeatherHomeView.vue`에서 `configStore.unitSymbol`을 내려주도록 했습니다. 비교 로직도 `hotThreshold`가 현재 선택된 단위 기준의 숫자라고 보고, 화씨 모드일 때만 섭씨로 환산한 뒤 비교하도록 수정했습니다.
+
+```js
+const hotCityCount = computed(() => {
+  const thresholdInCelsius =
+    configStore.unit === 'fahrenheit' ? ((hotThreshold.value - 32) * 5) / 9 : hotThreshold.value
+  return weatherList.value.filter((weather) => weather.temp >= thresholdInCelsius).length
+})
+```
+
+단위를 토글해도 입력창에 이미 쓰여 있는 숫자 자체를 자동으로 환산하지는 않습니다(예: 섭씨 32를 입력한 뒤 화씨로 바꾸면 라벨만 `°F`로 바뀌고 숫자는 그대로 32로 남아, 이제 "화씨 32도 이상"이 기준이 됩니다). 라벨과 판정 기준의 단위를 맞추는 것까지가 이번 수정 범위이며, 숫자까지 물리적으로 동일한 기준으로 자동 환산하는 것은 범위 밖으로 남겨뒀습니다.
+
 ---

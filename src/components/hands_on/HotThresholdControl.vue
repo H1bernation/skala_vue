@@ -8,6 +8,10 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  unitSymbol: {
+    type: String,
+    default: '°C',
+  },
 })
 
 const emit = defineEmits(['update-threshold'])
@@ -28,7 +32,7 @@ const sendToParent = (newValue) => {
           :value="hotThreshold"
           @input="sendToParent(Number($event.target.value))"
         />
-        <span class="threshold-unit">°C</span>
+        <span class="threshold-unit">{{ unitSymbol }}</span>
       </span>
     </label>
     <p class="threshold-result">

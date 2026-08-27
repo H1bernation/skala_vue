@@ -6,9 +6,11 @@ import SearchBar from '../components/hands_on/SearchBar.vue'
 import WeatherCard from '../components/hands_on/WeatherCard.vue'
 import HotThresholdControl from '../components/hands_on/HotThresholdControl.vue'
 import { useFavoriteStore } from '../stores/favoriteStore'
+import { useConfigStore } from '../stores/configStore'
 
 const router = useRouter()
 const favoriteStore = useFavoriteStore()
+const configStore = useConfigStore()
 
 const searchQuery = ref('')
 const selectedCityInfo = ref('')
@@ -47,8 +49,12 @@ watchEffect(() => {
   console.log(`검색어 : ${searchQuery.value}`)
 })
 
+// hotThreshold는 현재 선택된 단위(configStore.unit) 기준 숫자이므로,
+// 항상 섭씨로 저장된 weather.temp와 비교하려면 먼저 섭씨로 환산해야 한다.
 const hotCityCount = computed(() => {
-  return weatherList.value.filter((weather) => weather.temp >= hotThreshold.value).length
+  const thresholdInCelsius =
+    configStore.unit === 'fahrenheit' ? ((hotThreshold.value - 32) * 5) / 9 : hotThreshold.value
+  return weatherList.value.filter((weather) => weather.temp >= thresholdInCelsius).length
 })
 const weatherList = ref([
   { id: 'city_01', name: '서울', temp: 31, status: '맑음', emoji: '☀️', humidity: 70 },
@@ -78,6 +84,7 @@ const weatherList = ref([
       <HotThresholdControl
         :hot-threshold="hotThreshold"
         :hot-city-count="hotCityCount"
+        :unit-symbol="configStore.unitSymbol"
         @update-threshold="handleUpdateThreshold"
       />
     </BaseDashboardCard>
