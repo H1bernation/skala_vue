@@ -13,14 +13,7 @@ npm run dev
 
 터미널에 출력되는 로컬 주소(기본값 `http://localhost:5173`)로 접속하면 된다.
 
-## 주요 기술
-
-- Vue 3 / Composition API (`ref`, `computed`, `watch`, `watchEffect`)
-- Component 분리 (Props, Emits, Slot)
-- Vue Router (Lazy Loading, Dynamic Route, Catch-all Route)
-- Pinia (전역 상태 관리)
-
-## 현재 주요 기능
+## 주요 추가 기능
 
 - 도시별 날씨 카드 목록, 한글 도시명 검색/필터링
 - 기준 온도를 직접 입력해 "더운 도시" 개수 확인 (섭씨/화씨 단위 전환 반영)
