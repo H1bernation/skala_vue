@@ -416,3 +416,80 @@ const hotCityCount = computed(() => {
 단위를 토글해도 입력창에 이미 쓰여 있는 숫자 자체를 자동으로 환산하지는 않는다(예: 섭씨 32를 입력한 뒤 화씨로 바꾸면 라벨만 `°F`로 바뀌고 숫자는 그대로 32로 남아서, 이제 "화씨 32도 이상"이 기준이 된다). 라벨과 판정 기준의 단위를 맞추는 것까지가 이번 수정 범위였고, 숫자까지 물리적으로 동일한 기준으로 자동 환산하는 건 범위 밖으로 남겨뒀다.
 
 </details>
+
+<details>
+<summary><h3>과제 6 - Weather Axios</h3></summary>
+
+### 목표
+
+지금까지는 Home/Detail 둘 다 컴포넌트 안에 인라인으로 박아둔 Mock 배열을 보여주고 있었다. 이번 과제는 그 Mock을 실제 API 데이터로 바꾸는 게 핵심이고, 요구사항이 크게 세 가지였다 — OpenWeatherMap으로 실제 날씨를 가져올 것, OpenWeatherMap의 다른 API를 추가로 붙여 기능을 확장할 것, 그리고 OpenWeatherMap이 아닌 외부 API를 하나 더 붙여 기능을 확장할 것.
+
+### 구현 내용
+
+**1. weatherStore.js - Mock을 OpenWeatherMap 실데이터로 교체**
+
+기존 5개 도시 Mock 대신 전국 17개 시도의 좌표를 시드 데이터로 두고, `weatherStore.js`를 새로 만들어 실제 Current Weather API를 불러오게 했다. Home과 Detail이 같은 날씨 데이터를 봐야 하는 건 과제 5에서 `configStore`/`favoriteStore`를 Pinia로 뺐던 이유와 똑같아서(서로 다른 컴포넌트 인스턴스라 상태 공유가 필요함), 이번에도 Pinia Store로 관리했다. `fetchWeatherList()`가 17개 시도를 `Promise.all`로 병렬 호출한다.
+
+```js
+const responses = await Promise.all(
+  sidoCoordinates.map((sido) =>
+    axios.get('https://api.openweathermap.org/data/2.5/weather', {
+      params: { lat: sido.lat, lon: sido.lng, appid: apiKey, units: 'metric', lang: 'kr' },
+    }),
+  ),
+)
+```
+
+**2. OpenWeatherMap Air Pollution API로 대기질 정보 추가 (요구사항 2)**
+
+같은 API Key로 접근할 수 있는 Air Pollution API(`/data/2.5/air_pollution`)를 Current Weather 호출과 나란히 병렬 호출해서 미세먼지(PM10)/초미세먼지(PM2.5)/대기질 상태를 함께 가져왔다. OpenWeatherMap이 주는 `aqi`는 1~5(Good~Very Poor) 5단계인데, 그대로 쓰기보다 사용자가 바로 이해할 수 있게 "좋음/보통/나쁨/매우 나쁨" 4단계로 바꾸는 변환 함수를 따로 뒀다.
+
+```js
+const AQI_STATUS = { 1: '좋음', 2: '보통', 3: '나쁨', 4: '매우 나쁨', 5: '매우 나쁨' }
+function getAirQualityStatus(aqi) {
+  return AQI_STATUS[aqi] || '정보 없음'
+}
+```
+
+`WeatherDetailView.vue` 상세 화면에 기존 기온/습도 정보 옆에 그대로 추가했다.
+
+**3. Open-Meteo API로 야외활동 지수 계산 (요구사항 3 - 기타 외부 API)**
+
+세 번째 요구사항은 처음에 공공데이터포털 AirKorea(미세먼지 API)로 채우려고 했는데, 아래 Troubleshooting에 적은 이유로 최종 배포 환경(Vercel 정적 배포)에서 동작하지 않아 포기했다. 대신 API Key 없이 호출할 수 있고 CORS를 완전히 허용하는 Open-Meteo API로 대체했다. `activityStore.js`에서 위도/경도를 콤마로 이어 붙여 요청 한 번으로 17개 시도의 기온/풍속/UV 지수를 전부 받아온다.
+
+```js
+const latitudes = sidoCoordinates.map((sido) => sido.lat).join(',')
+const longitudes = sidoCoordinates.map((sido) => sido.lng).join(',')
+const response = await axios.get('https://api.open-meteo.com/v1/forecast', {
+  params: {
+    latitude: latitudes,
+    longitude: longitudes,
+    current: 'temperature_2m,wind_speed_10m',
+    daily: 'uv_index_max',
+    timezone: 'Asia/Seoul',
+  },
+})
+```
+
+받아온 기온/UV/풍속으로 0~100점짜리 "야외활동 지수"를 직접 계산하는데, 계산 로직은 store 액션과 분리한 별도 함수(`calculateActivityScore`)로 뒀다. 기온이 이상 범위(18~24도)를 벗어난 정도, UV 지수 등급, 풍속 구간에 따라 100점에서 감점하는 방식이다. 이 지수도 `WeatherDetailView.vue`에 함께 표시했다.
+
+### 주요 변경
+
+- `src/stores/weatherStore.js` 새로 작성 (OpenWeatherMap Current Weather + Air Pollution)
+- `src/stores/activityStore.js` 새로 작성 (Open-Meteo + 야외활동 지수 계산)
+- `src/views/WeatherHomeView.vue` 수정 — Mock 배열 제거하고 `weatherStore` 연동, 로딩/에러 상태 표시 추가
+- `src/views/WeatherDetailView.vue` 수정 — `weatherStore`/`activityStore` 연동, 대기질·야외활동 지수 표시 추가
+
+### Troubleshooting
+
+**개인적으로 테스트해보던 Axios 코드가 화면에 아예 안 뜨던 문제**
+
+과제를 진행하기 전에 Axios가 어떻게 동작하는지 미리 확인해보려고 `AxiosWeather.vue`를 따로 만들어 테스트하고 있었는데, 화면에 아무것도 렌더링되지 않았다. `</template>` 태그 밖에 `<p>` 태그가 하나 남아 있었던 게 원인이었다 — 그래서 `<p>` 태그를 template 안(`v-else` 영역)으로 옮기니 정상적으로 렌더링됐다.
+
+**공공데이터포털 AirKorea 미세먼지 API 연동을 시도했다가 포기한 문제**
+
+요구사항 3(기타 외부 API)을 채우려고 처음엔 AirKorea(에어코리아) 대기오염 API를 붙였다. 서비스키 발급 문제를 해결하고 curl로 직접 호출해보면 정상 응답(200)이 오는데, 정작 브라우저에서 axios로 호출하면 전부 403이 났다. 처음엔 CORS 문제라고 생각했는데, 실제로는 CORS 프리플라이트 실패가 아니라 서버가 진짜 403을 응답하고 있었다 — AirKorea API는 서버 대 서버 호출을 전제로 만들어져 있어서, 브라우저가 자동으로 붙이는 Origin/Referer 헤더를 보고 게이트웨이 단에서 차단하고 있었던 것이다.(Claude로 확인)
+
+Vite 개발 서버의 proxy 기능을 쓰면 dev 모드에서는 우회할 수 있다는 것까지 확인했지만, 이 프로젝트의 최종 제출 방식이 Vercel을 통한 정적 배포라 별도 백엔드 없이는 이 우회가 배포 환경에서 그대로 동작하지 않는다. 그래서 API Key 없이 호출 가능하고 CORS를 전면 허용하는 Open-Meteo API를 사용했다.
+
+</details>

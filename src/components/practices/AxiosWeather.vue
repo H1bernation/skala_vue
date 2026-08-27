@@ -5,7 +5,7 @@ const weatherData = ref(null)
 const isLoading = ref(false)
 const handleFetchWeather = async () => {
   isLoading.value = true
-  const API_KEY = '31ff72075079fc9b4ac1b396079ddfff'
+  const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
   const URL = `https://api.openweathermap.org/data/2.5/weather?lat=37.4058316&lon=127.0981535&appid=${API_KEY}&units=metric&lang=kr`
   try {
     // 비동기 통신: 서버에서 데이터를 다 가져올 때까지 await로 기다린다.

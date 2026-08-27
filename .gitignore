@@ -32,6 +32,9 @@ coverage
 CLAUDE.md
 .claude/
 
+# Env
+.env
+
 # Cypress
 /cypress/videos/
 /cypress/screenshots/
