@@ -4,6 +4,8 @@
 
 SKALA Vue.js 수업의 Hands-on 과제를 진행하면서 만든 날씨 대시보드다. 처음에는 정적인 배열을 화면에 뿌리기만 하는 Mockup이었는데, 과제를 하나씩 거치면서 반응형 상태(Composition API) → 컴포넌트 분리(Props/Emits) → 페이지 라우팅(Vue Router) → 전역 상태 관리(Pinia) 순서로 같은 화면을 계속 다시 다듬어왔다. 그래서 하나의 프로젝트 안에 지금까지 배운 Vue 문법이 단계별로 쌓여 있다.
 
+배포 링크: [skala-vue-eta-five.vercel.app](https://skala-vue-eta-five.vercel.app/)
+
 ## 실행 방법
 
 ```bash
@@ -556,5 +558,44 @@ app.use(ElementPlus)
 **지도+범례 크기가 기온/대기질 모드를 전환할 때마다 바뀌던 문제**
 
 지도를 감싼 `.korea-map-wrap`의 폭을 `width: min(480px, 100%)`로 줬는데도, 기온 모드와 대기질 모드를 오갈 때마다 지도 크기가 미세하게 달라졌다. 이 요소가 CSS Grid의 `auto` 트랙 안에 있었던 게 원인이었다 — `auto` 트랙 폭은 안쪽 콘텐츠의 크기를 보고 정해지는데, 그 계산 과정에서 퍼센트 값(`100%`)이 안정적으로 해석되지 않고, 결국 옆에 있는 범례 글자 길이(기온 모드의 "선선해요 (25℃ 미만)" 같은 긴 문구 vs 대기질 모드의 "좋음/보통/나쁨" 같은 짧은 문구)에 따라 트랙 폭 자체가 흔들렸다. `.korea-map-wrap`의 `width`가 아니라, 그걸 감싸는 Grid 트랙(`grid-template-columns`)을 `480px 1fr`처럼 고정 픽셀 값으로 못 박아서 해결했다.
+
+</details>
+
+<details>
+<summary><h3>과제 8 - Weather Deployment</h3></summary>
+
+### 목표
+
+소스 코드 품질을 정리(ESLint 에러 제거, API 키 환경 변수 처리)하고, 실제로 빌드한 정적 파일을 서버에 올려서 배포까지 확인하는 게 목표였다. 배포는 Vercel을 사용했다.
+
+### 구현 내용
+
+**1. ESLint 정리**
+
+`npx eslint .`를 돌려보니 실제 Weather 화면과 무관한 `components/code_challenge/`, `components/practices/`(과제 1~7을 진행하며 쌓인 실습/테스트용 컴포넌트, 어디서도 import하지 않는 상태)에서 `no-unused-vars` 에러가 여러 개 있었다. 최종 제출 단계라 이 폴더들을 통째로 삭제했다. `HotThresholdControl.vue`, `SearchBar.vue`에도 `const props = defineProps(...)`로 선언만 하고 `props.xxx`로 참조하지는 않는 미사용 변수 에러가 있었는데, `<script setup>`에서는 `defineProps()`를 변수에 담지 않아도 Template에서 선언한 이름 그대로 쓸 수 있어서 `const props =` 부분만 지워 해결했다. 최종적으로 `npx eslint .` 결과 0 error.
+
+**2. API 키 환경 변수 처리**
+
+`VITE_OPENWEATHER_API_KEY`는 처음부터 `.env`에 두고 `import.meta.env.VITE_OPENWEATHER_API_KEY`로 읽어오고 있었고, `.env`는 `.gitignore`에 등록해 git에 올라가지 않도록 했다. `git ls-files`, `git log`로 실제로 git 히스토리에 키가 커밋된 적이 없는지도 확인했다.
+
+**3. Build & Vercel 배포**
+
+`npm run build`로 `dist/` 정적 파일을 만들고, GitHub 저장소를 Vercel에 연결해서 배포했다. → [skala-vue-eta-five.vercel.app](https://skala-vue-eta-five.vercel.app/)
+
+### 주요 변경
+
+- `src/components/code_challenge/`(6개 파일), `src/components/practices/`(3개 파일) 삭제
+- `src/components/hands_on/HotThresholdControl.vue`, `SearchBar.vue` — 미사용 `props` 변수 정리
+- Vercel 프로젝트에 `VITE_OPENWEATHER_API_KEY` 환경 변수 등록
+
+### Troubleshooting
+
+**배포 직후 "API 키를 확인해주세요" 에러만 뜨던 문제**
+
+Vercel 배포는 성공했는데 화면에는 날씨 데이터 대신 에러 문구만 떴다. `.env`가 git에 올라가지 않도록 만든 게 원인이었다 — Vercel은 GitHub 저장소만 보고 빌드하기 때문에, 로컬에만 있는 `.env`의 `VITE_OPENWEATHER_API_KEY`를 전혀 모르는 상태였다. Vercel 프로젝트 Settings의 Environment Variables에 같은 이름으로 키를 직접 등록하고, Redeploy를 한 번 더 실행해서 해결했다. Vite는 환경 변수를 빌드 시점에 결과물 JS에 값 그대로 심어두기 때문에, 변수를 추가만 하고 재배포하지 않으면 이미 실패한 빌드가 그대로 남아있다는 것도 이번에 확인했다.
+
+**Vercel에서 API 키를 Secret으로 등록하려다 막힌 문제**
+
+Vercel에 환경 변수를 Secret(저장 후 값 재조회 불가)으로 등록하려 했더니 "Environment variables with a public framework prefix cannot use `visibility: secret`. Use `visibility: config` instead." 에러가 떴다. 원인은 `VITE_` 접두사가 붙은 값은 Vite가 빌드할 때 클라이언트에 배포되는 JS 파일 안에 그대로 심어 넣기 때문이다 — 배포되는 순간 이미 누구나 브라우저 개발자도구로 볼 수 있는 값이라, Vercel 대시보드에서만 조회를 막는 Secret 옵션 자체가 의미가 없어서 막혀 있는 것이었다. Config로 등록해서 해결했다. 이 프로젝트처럼 백엔드 없이 프론트에서 직접 외부 API를 호출하는 구조에서는 API 키를 브라우저로부터 완전히 숨길 방법이 없고, 이번 과제 요구사항(git에 키가 올라가지 않는 것)까지가 처리할 수 있는 범위라는 것도 같이 정리했다.
 
 </details>

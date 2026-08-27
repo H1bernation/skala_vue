@@ -5,7 +5,7 @@
 // 변경 이력
 // - UI 개선: 기본 input을 el-input으로 교체(단방향 바인딩 구조는 그대로 유지)
 // - UI 개선: 카드 전체 폭까지 늘어나던 레이아웃을 폭 제한 + 세로 배치로 정돈, 돋보기 아이콘 추가
-const props = defineProps({
+defineProps({
   // query: 부모가 관리하는 현재 검색어
   query: {
     type: String,

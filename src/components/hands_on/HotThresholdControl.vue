@@ -3,7 +3,7 @@
 //
 // 변경 이력
 // - UI 개선: 숫자 input을 el-input-number로 교체(단방향 바인딩 구조는 그대로 유지)
-const props = defineProps({
+defineProps({
   // hotThreshold: 부모가 관리하는 현재 기준 온도(선택된 단위 기준 숫자)
   hotThreshold: {
     type: Number,
