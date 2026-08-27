@@ -5,14 +5,19 @@ import BaseDashboardCard from '../components/hands_on/BaseDashboardCard.vue'
 import SearchBar from '../components/hands_on/SearchBar.vue'
 import WeatherCard from '../components/hands_on/WeatherCard.vue'
 import HotThresholdControl from '../components/hands_on/HotThresholdControl.vue'
+import { useFavoriteStore } from '../stores/favoriteStore'
 
 const router = useRouter()
+const favoriteStore = useFavoriteStore()
 
 const searchQuery = ref('')
 const selectedCityInfo = ref('')
 const hotThreshold = ref(30)
+const showFavoritesOnly = ref(false)
 const filteredWeatherList = computed(() => {
-  return weatherList.value.filter((weather) => weather.name.includes(searchQuery.value))
+  return weatherList.value
+    .filter((weather) => weather.name.includes(searchQuery.value))
+    .filter((weather) => !showFavoritesOnly.value || favoriteStore.isFavorite(weather.id))
 })
 const handleUpdateQuery = (newQuery) => {
   console.log('[WeatherHomeView] 검색어 변경 이벤트를 받았습니다:', newQuery)
@@ -63,6 +68,10 @@ const weatherList = ref([
 
     <BaseDashboardCard>
       <SearchBar :query="searchQuery" @update-query="handleUpdateQuery" />
+      <label class="favorite-filter">
+        <input type="checkbox" v-model="showFavoritesOnly" />
+        ⭐ 즐겨찾기만 보기
+      </label>
     </BaseDashboardCard>
 
     <BaseDashboardCard>
@@ -126,6 +135,16 @@ const weatherList = ref([
   background: #fdf0e2;
   border-radius: 999px;
   padding: 4px 12px;
+}
+
+.favorite-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #6b7078;
+  cursor: pointer;
 }
 
 .selected-status {

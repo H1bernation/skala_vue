@@ -6,6 +6,7 @@ import FormHandlingChallenge from './components/code_challenge/FormHandlingChall
 import ReactiveStateChallenge from './components/code_challenge/ReactiveStateChallenge.vue'
 import ComputedWatchersChallenge from './components/code_challenge/ComputedWatchersChallenge.vue'
 import ComponentLifecycle from './components/code_challenge/ComponentLifecycle.vue'
+import UnitToggler from './components/hands_on/UnitToggler.vue'
 
 const currentPage = ref('practice')
 const showLifecycle = ref(true)
@@ -30,10 +31,13 @@ const showLifecycle = ref(true)
   </div>
   <section v-if="currentPage === 'practice'">
     <!-- 실습 컴포넌트들 -->
-    <nav class="weather-nav">
-      <RouterLink to="/" class="weather-nav-link">날씨 대시보드</RouterLink>
-      <RouterLink to="/about" class="weather-nav-link">서비스 소개</RouterLink>
-    </nav>
+    <div class="weather-topbar">
+      <nav class="weather-nav">
+        <RouterLink to="/" class="weather-nav-link">날씨 대시보드</RouterLink>
+        <RouterLink to="/about" class="weather-nav-link">서비스 소개</RouterLink>
+      </nav>
+      <UnitToggler />
+    </div>
     <RouterView />
   </section>
 
@@ -100,13 +104,20 @@ const showLifecycle = ref(true)
   color: #ffffff;
 }
 
-.weather-nav {
+.weather-topbar {
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 20px;
   max-width: 960px;
   margin: 20px auto 0;
   padding: 0 20px;
+}
+
+.weather-nav {
+  display: flex;
+  gap: 16px;
 }
 
 .weather-nav-link {

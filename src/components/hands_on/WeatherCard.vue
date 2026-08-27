@@ -1,4 +1,8 @@
 <script setup>
+import { computed } from 'vue'
+import { useConfigStore } from '../../stores/configStore'
+import { useFavoriteStore } from '../../stores/favoriteStore'
+
 const props = defineProps({
   weather: {
     type: Object,
@@ -7,6 +11,18 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['select-card', 'click-detail'])
+
+const configStore = useConfigStore()
+const favoriteStore = useFavoriteStore()
+
+// 원본 데이터는 항상 섭씨이며, 화면 표시 단위만 configStore 설정에 따라 변환한다.
+const displayTemp = computed(() => {
+  const rawTemp = props.weather.temp
+  if (configStore.unit === 'fahrenheit') {
+    return Math.round((rawTemp * 9) / 5 + 32)
+  }
+  return rawTemp
+})
 
 const handleSelectCard = () => {
   console.log('[WeatherCard] select-card emit:', props.weather.name)
@@ -21,10 +37,18 @@ const handleClickDetail = () => {
 
 <template>
   <div class="weather-card" @click="handleSelectCard">
+    <button
+      class="favorite-button"
+      :class="{ 'favorite-button--active': favoriteStore.isFavorite(weather.id) }"
+      @click.stop="favoriteStore.toggleFavorite(weather.id)"
+    >
+      {{ favoriteStore.isFavorite(weather.id) ? '★' : '☆' }}
+    </button>
+
     <div class="weather-info">
       <span class="weather-emoji">{{ weather.emoji }}</span>
       <h2 class="weather-city">{{ weather.name }}</h2>
-      <p class="weather-temp">{{ weather.temp }}°C</p>
+      <p class="weather-temp">{{ displayTemp }}{{ configStore.unitSymbol }}</p>
       <p class="weather-status">{{ weather.status }}</p>
     </div>
 
@@ -39,6 +63,7 @@ const handleClickDetail = () => {
 
 <style scoped>
 .weather-card {
+  position: relative;
   flex: 1 1 200px;
   max-width: 220px;
   background: #ffffff;
@@ -51,6 +76,22 @@ const handleClickDetail = () => {
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
+}
+
+.favorite-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  background: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #c7ccd4;
+  cursor: pointer;
+}
+
+.favorite-button--active {
+  color: #f5a524;
 }
 
 .weather-card:hover {

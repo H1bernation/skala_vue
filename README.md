@@ -276,3 +276,100 @@ const handleClickDetail = (cityId) => {
 이런 상황을 대비하려면 `onMounted` 대신(또는 추가로) `watch(() => route.params.cityId, ...)`로 `cityId` 변경을 감시해서 도시를 다시 조회해야 합니다. "컴포넌트가 마운트될 때 한 번"과 "라우트 파라미터가 바뀔 때마다"는 다른 시점이라는 점이 Vue Router에서 자주 헷갈리는 부분입니다.
 
 ---
+
+## 과제 5. Weather Store
+
+Pinia를 도입해 날씨 단위(섭씨/화씨)를 전역 상태로 관리하고, 서로 다른 컴포넌트 인스턴스인 `WeatherHomeView`와 `WeatherDetailView`에서 동일한 설정이 공유되는 것을 구현했습니다.
+
+### 요구사항 구현
+
+#### 1. configStore.js - 단위 설정 Store
+
+`stores/configStore.js`에 단위 상태를 관리하는 Store를 작성했습니다. `state`는 `unit`(기본값 `'celsius'`), `getters`는 현재 단위 기호를 반환하는 `unitSymbol`, `actions`는 `'celsius'`/`'fahrenheit'`를 토글하는 `toggleUnit`으로 구성했습니다.
+
+```js
+export const useConfigStore = defineStore('config', {
+  state: () => ({ unit: 'celsius' }),
+  getters: {
+    unitSymbol: (state) => (state.unit === 'celsius' ? '°C' : '°F'),
+  },
+  actions: {
+    toggleUnit() {
+      this.unit = this.unit === 'celsius' ? 'fahrenheit' : 'celsius'
+    },
+  },
+})
+```
+
+#### 2. UnitToggler.vue - 단위 변경 UI + Navigation Bar 옆 배치
+
+`UnitToggler.vue`는 `configStore.unitSymbol`을 버튼에 표시하고, 클릭하면 `configStore.toggleUnit()`을 호출합니다. `App.vue`의 Practice 탭에서 기존 Navigation Bar(`RouterLink` nav)를 `.weather-topbar`로 감싸고 그 옆에 `UnitToggler`를 배치했습니다.
+
+```vue
+<div class="weather-topbar">
+  <nav class="weather-nav">...</nav>
+  <UnitToggler />
+</div>
+```
+
+#### 3. 메인/상세 화면에 단위 변경 적용
+
+`WeatherCard.vue`와 `WeatherDetailView.vue`에 각각 `displayTemp`라는 `computed`를 추가해, 원본 섭씨 데이터를 `configStore.unit`에 따라 화씨로 변환한 값을 표시합니다. 온도 조건 판정(`위험해요`/`더워요`/`괜찮아요`/`선선해요`)은 표시 단위와 무관하게 원본 섭씨 값(`weather.temp`) 기준을 그대로 유지했습니다.
+
+```js
+const displayTemp = computed(() => {
+  const rawTemp = props.weather.temp
+  if (configStore.unit === 'fahrenheit') {
+    return Math.round((rawTemp * 9) / 5 + 32)
+  }
+  return rawTemp
+})
+```
+
+`WeatherDetailView.vue`는 `city`가 `onMounted` 시점에만 채워지는 `ref(null)` 구조를 그대로 유지한 채, `displayTemp` 내부에서 `city.value`가 없을 때를 먼저 처리해 마운트 전/도시를 찾지 못한 경우에도 에러 없이 동작하도록 했습니다. 코드 중복(두 파일에 동일한 변환 로직)은 Composable로 줄일 수 있지만, 이번 과제 범위에서는 각 컴포넌트에 그대로 두었습니다.
+
+#### 4. favoriteStore.js - 즐겨찾기 도시 기능 (개인 추가 Store)
+
+`configStore.js`와 동일한 스타일로 `favoriteStore.js`를 새로 작성했습니다. `favoriteIds` 배열(state)에 즐겨찾기한 도시 `id`를 담고, `isFavorite(cityId)` getter로 즐겨찾기 여부를 확인하며, `toggleFavorite(cityId)` action으로 추가/제거를 토글합니다.
+
+```js
+export const useFavoriteStore = defineStore('favorite', {
+  state: () => ({ favoriteIds: [] }),
+  getters: {
+    isFavorite: (state) => (cityId) => state.favoriteIds.includes(cityId),
+  },
+  actions: {
+    toggleFavorite(cityId) {
+      if (this.favoriteIds.includes(cityId)) {
+        this.favoriteIds = this.favoriteIds.filter((id) => id !== cityId)
+      } else {
+        this.favoriteIds.push(cityId)
+      }
+    },
+  },
+})
+```
+
+`WeatherCard.vue`(카드 우상단)와 `WeatherDetailView.vue`(상세 카드 우상단)에 별 아이콘 버튼을 추가해 `favoriteStore.toggleFavorite(id)`를 호출합니다. `WeatherCard.vue`의 별 버튼에는 `@click.stop`을 적용해 카드 선택(`select-card`) 이벤트로 버블링되지 않도록 했습니다. `WeatherHomeView`에서 즐겨찾기한 도시가 `WeatherDetailView`로 이동해도(반대 방향도) 동일하게 유지되는데, 이는 두 View가 서로 다른 컴포넌트 인스턴스임에도 Pinia Store를 통해 상태를 공유하기 때문입니다.
+
+#### 5. Home에 "즐겨찾기만 보기" 필터
+
+`WeatherHomeView.vue`에 `showFavoritesOnly`(체크박스로 토글되는 `ref`)를 추가하고, `filteredWeatherList`가 검색어 필터에 이어 즐겨찾기 여부까지 함께 걸러내도록 했습니다.
+
+```js
+const filteredWeatherList = computed(() => {
+  return weatherList.value
+    .filter((weather) => weather.name.includes(searchQuery.value))
+    .filter((weather) => !showFavoritesOnly.value || favoriteStore.isFavorite(weather.id))
+})
+```
+
+### 트러블슈팅
+
+#### 1. 즐겨찾기 기능을 만들었지만 실제로는 아무 효과가 없었던 문제
+
+`favoriteStore.js`와 별 아이콘 버튼(4번 항목)까지 구현한 뒤 확인해보니, 버튼을 눌러도 별 색깔만 바뀔 뿐 그 상태를 실제로 활용하는 화면 요소가 하나도 없었습니다. `toggleFavorite`로 상태를 "쓰는" 로직만 만들고, 그 상태를 "읽어서" 화면에 반영하는 소비 로직을 만들지 않았던 것이 원인입니다.
+
+이를 해결하기 위해 5번 항목의 "즐겨찾기만 보기" 필터를 추가해, `filteredWeatherList`가 `favoriteStore.isFavorite(weather.id)`를 실제로 참조하도록 만들었습니다. Store에 상태를 저장하는 것과 그 상태를 화면 로직에서 실제로 사용하는 것은 별개의 작업이며, 후자가 빠지면 기능이 눈에 보이는 토글일 뿐 아무 역할도 하지 않는다는 점을 확인했습니다.
+
+---
